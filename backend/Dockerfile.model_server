@@ -1,0 +1,46 @@
+FROM registry.cn-hangzhou.aliyuncs.com/woodynew/python:3.11.7-slim-bookworm
+
+LABEL com.danswer.maintainer="founders@danswer.ai"
+LABEL com.danswer.description="This image is for the Danswer model server which runs all of the \
+    AI models for Danswer. This container and all the code is MIT Licensed and free for all to use. \
+    You can find it at https://hub.docker.com/r/danswer/danswer-model-server. For more details, \
+    visit https://github.com/danswer-ai/danswer."
+
+# Default DANSWER_VERSION, typically overriden during builds by GitHub Actions.
+ARG DANSWER_VERSION=0.3-dev
+ENV DANSWER_VERSION=${DANSWER_VERSION}
+RUN echo "DANSWER_VERSION: ${DANSWER_VERSION}"
+
+COPY ./requirements/model_server.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /tmp/requirements.txt
+
+RUN apt-get remove -y --allow-remove-essential perl-base && \
+    apt-get autoremove -y
+
+# Pre-downloading models for setups with limited egress
+RUN python -c "from transformers import AutoModel, AutoTokenizer, TFDistilBertForSequenceClassification; \
+    from huggingface_hub import snapshot_download; \
+    AutoTokenizer.from_pretrained('danswer/intent-model'); \
+    AutoTokenizer.from_pretrained('intfloat/e5-base-v2'); \
+    AutoTokenizer.from_pretrained('mixedbread-ai/mxbai-rerank-xsmall-v1'); \
+    snapshot_download('danswer/intent-model'); \
+    snapshot_download('intfloat/e5-base-v2'); \
+    snapshot_download('mixedbread-ai/mxbai-rerank-xsmall-v1')"
+
+WORKDIR /app
+
+# Utils used by model server
+COPY ./danswer/utils/logger.py /app/danswer/utils/logger.py
+
+# Place to fetch version information
+COPY ./danswer/__init__.py /app/danswer/__init__.py
+
+# Shared between Danswer Backend and Model Server
+COPY ./shared_configs /app/shared_configs
+
+# Model Server main code
+COPY ./model_server /app/model_server
+
+ENV PYTHONPATH /app
+
+CMD ["uvicorn", "model_server.main:app", "--host", "0.0.0.0", "--port", "9000"]
