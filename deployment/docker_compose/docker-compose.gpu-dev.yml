@@ -273,7 +273,7 @@ services:
         max-file: "6"
 
   relational_db:
-    image: registry.cn-hangzhou.aliyuncs.com/woodynew/postgres:15.2-alpine
+    image: postgres:15.2-alpine
     restart: always
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
@@ -285,7 +285,7 @@ services:
 
   # This container name cannot have an underscore in it due to Vespa expectations of the URL
   index:
-    image: registry.cn-hangzhou.aliyuncs.com/woodynew/vespaengine:vespa-8.277.17
+    image: vespaengine/vespa:8.277.17
     restart: always
     ports:
       - "19071:19071"
@@ -299,7 +299,7 @@ services:
         max-file: "6"
 
   nginx:
-    image: registry.cn-hangzhou.aliyuncs.com/woodynew/nginx:1.24-alpine
+    image: nginx:1.23.4-alpine
     restart: always
     # nginx will immediately crash with `nginx: [emerg] host not found in upstream`
     # if api_server / web_server are not up 

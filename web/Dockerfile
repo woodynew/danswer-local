@@ -1,4 +1,4 @@
-FROM registry.cn-hangzhou.aliyuncs.com/woodynew/node:20-alpine AS base
+FROM node:20-alpine AS base
 
 LABEL com.danswer.maintainer="founders@danswer.ai"
 LABEL com.danswer.description="This image is for the frontend/webserver of Danswer. It is MIT \
